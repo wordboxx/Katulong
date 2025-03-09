@@ -9,7 +9,7 @@ if __name__ == "__main__":
     print("Starting bot...")
 
 # Load environment variables
-load_dotenv()
+load_dotenv(dotenv_path='data/.env')
 
 # Setup intents
 intents = discord.Intents.default()
@@ -24,7 +24,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # --- Logged in
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user}')
+    print(f'Logged in as {bot.user}!')
 
 # --- If the bot is mentioned in message
 @bot.event
