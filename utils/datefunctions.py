@@ -10,4 +10,4 @@ VAYCAY_START = datetime.date(2025, 6, 19)
 DAYS_UNTIL_VAYCAY = (VAYCAY_START - TODAY).days
 
 def get_days_until_vaycay():
-    return f"{DAYS_UNTIL_VAYCAY} until vaycay!"
+    return f"{DAYS_UNTIL_VAYCAY} days until vaycay!"
