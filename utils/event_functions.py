@@ -17,6 +17,7 @@ def events():
     ]
     return "\n".join(commands_list)
 
+#TODO: bot should be prompted to send messages within the functions to get prompts from user
 def list_events():
     print(f"Listing events from {EVENTS_FILEPATH}")
     
