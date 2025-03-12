@@ -9,7 +9,11 @@ if __name__ == "__main__":
     print("Starting bot...")
 
 # Load environment variables.
-load_dotenv(dotenv_path='data/.env')
+try:
+    load_dotenv(dotenv_path='data/.env')
+except:
+    print(f"Something went wrong loading from data directory!")
+    exit(1)
 
 # Setup intents.
 intents = discord.Intents.default()
@@ -36,7 +40,7 @@ async def on_message(message):
     # Check if the bot was mentioned in the message.
     if bot.user.mentioned_in(message):
         # TODO: Fill out command list when pinged.
-        await message.channel.send("(fill out commands later)")
+        await message.channel.send(event_functions.help())
 
     # This line is important! It processes commands.
     await bot.process_commands(message)
@@ -50,12 +54,22 @@ async def ping(ctx):
 # --- !events: lists help menu for all events functions.
 @bot.command()
 async def events(ctx):
-    await ctx.send(event_functions.events())
+    await event_functions.events(ctx)
 
 # --- !list_events: lists all events in events.json.
 @bot.command()
 async def list_events(ctx):
-    await ctx.send(event_functions.list_events())
+    await event_functions.list_events(ctx)
+
+# --- !add_event: add an event to events.json
+@bot.command()
+async def add_event(ctx):
+    await event_functions.add_event(ctx)
+
+# --- !remove_event: removes an event from events.json
+@bot.command()
+async def remove_event(ctx):
+    await event_functions.remove_event(ctx)
 
 # Get token from environment variable.
 TOKEN = os.getenv('DISCORD_TOKEN')
