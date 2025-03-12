@@ -9,16 +9,29 @@ DATA_DIR = 'data/'
 EVENTS_FILEPATH = DATA_DIR + 'events.json'
 
 # Functions
-def events():
-    commands_list = [
-        "list_events: Lists all events.",
-        "add_event: Add event.",
-        "remove_event: Remove event."
+def help():
+    print(f"Lists all available commands.")
+    
+    # List of all commands.
+    # TODO: Automate this list.
+    command_list = [
+        "COMMANDS: ",
+        "-----",
+        "`!events`: lists all event options"
     ]
-    return "\n".join(commands_list)
+
+    return "\n".join(command_list)
+
+async def events(ctx):
+    commands_list = [
+        "`!list_events`: Lists all events.",
+        "`!add_event`: Add event.",
+        "`!remove_event`: Remove event."
+    ]
+    await ctx.send("`\n`".join(commands_list))
 
 #TODO: bot should be prompted to send messages within the functions to get prompts from user
-def list_events():
+async def list_events(ctx):
     print(f"Listing events from {EVENTS_FILEPATH}")
     
     # Open JSON
@@ -29,23 +42,32 @@ def list_events():
     # Then, returns all entries as one giant string with newline characters.
     event_list = []
     for index, event in enumerate(events):
-        event_list.append(f"{index}: {event} - {events[event]}")
+        event_list.append(f"`{index}`: {event} - {events[event]}")
     
-    return "\n".join(event_list)
+    if len(event_list) == 0:
+        await ctx.send(f"`No events found.`")
+    else:
+        await ctx.send("\n".join(event_list))
 
-def add_event(event_name=""):
+async def add_event(ctx):
     # If the event was not specified in the command, prompt user for event name.
-    if event_name == "":
-        event_name = input("What do you want to call this event?: ")
-    
+    await ctx.send("Name this event?:")
+    event_name = await ctx.bot.wait_for('message', check=lambda message: message.author == ctx.author)
+    event_name = event_name.content
+
     # Enter the date of the event.
     while True:
-        event_date_input = input("When is the event? (MM-DD-YYYY): ")
+        await ctx.send("When is the event? `MM-DD-YYYY` or `q` to quit:")
+        event_date_input = await ctx.bot.wait_for('message', check=lambda message: message.author == ctx.author)
+        event_date_input = event_date_input.content
+        if event_date_input == "q":
+            print(f"User aborted.")
+            return None
         try:
             event_date = datetime.datetime.strptime(event_date_input, "%m-%d-%Y").strftime("%B %d, %Y")
             break
         except ValueError:
-            print("Invalid date format. Please enter in MM-DD-YYYY format.")
+            await ctx.send("Invalid input; Please enter is `MM-DD-YYYY`.")
 
     # Add the event and date to JSON.
     print(f"Adding event: {event_name} on {event_date}")
@@ -57,7 +79,7 @@ def add_event(event_name=""):
     with open(EVENTS_FILEPATH, 'w') as f:
         json.dump(events, f)
 
-def remove_event():
+async def remove_event(ctx):
     list_events()
 
     # Open JSON.
@@ -71,11 +93,12 @@ def remove_event():
 
     while True:
         try:
-            event_to_delete = int(input("Which event to delete? Select number: "))
+            await ctx.send("Which event to delete? Enter the Leftmost number:")
+            event_to_delete = await ctx.bot.wait_for('message', check=lambda message: message.author == ctx.author)
+            event_to_delete = int(event_to_delete.content)
             break
         except ValueError:
-            print("Invalid input. Please enter a valid number.")
-
+            await ctx.send("Invalid input; please input an integer.")
 
     # Make sure that selected event is in appropriate range.
     if 0 <= event_to_delete < len(events):
@@ -91,8 +114,7 @@ def remove_event():
 
     # If range is invalid.
     else:
-        print("Invalid number.")
-
+        await ctx.send("Invalid number; operation aborted.")
 
 
 # This module provides date-related functions and constants.
