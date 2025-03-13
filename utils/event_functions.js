@@ -152,3 +152,9 @@ module.exports = {
     add_event,
     remove_event
 };
+
+if (require.main == module) {
+    (async () => {
+        console.log("event_functions.js ran as main file");
+    })();
+}
