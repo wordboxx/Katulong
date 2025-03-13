@@ -31,7 +31,6 @@ client.on('messageCreate', async (message) => {
 
     // Check if the bot was mentioned in the message.
     if (message.mentions.has(client.user)) {
-        // TODO: Fill out command list when pinged.
         await message.channel.send(eventFunctions.help());
     }
 
