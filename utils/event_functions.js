@@ -34,7 +34,6 @@ async function events(message) {
     await message.channel.send(commandsList.join("\n"));
 }
 
-//TODO: bot should be prompted to send messages within the functions to get prompts from user
 async function list_events(message) {
     console.log(`Listing events from ${EVENTS_FILEPATH}`);
 
@@ -44,8 +43,10 @@ async function list_events(message) {
     // Populates a list with a formatted string for each entry. 
     // Then, returns all entries as one giant string with newline characters.
     const eventList = [];
-    for (const [index, event] of Object.entries(events)) {
-        eventList.push(`\`${index}\`: ${event} - ${events[event]}`);
+    let index = 0;
+    for (const [eventName, eventDate] of Object.entries(events)) {
+        eventList.push(`\`${index}\`: ${eventName} - ${eventDate}`);
+        index++;
     }
 
     if (eventList.length === 0) {
@@ -56,6 +57,7 @@ async function list_events(message) {
 }
 
 async function add_event(message) {
+    //TODO: Fix adding event date
     // If the event was not specified in the command, prompt user for event name.
     await message.channel.send("Name this event?:");
     const eventName = (await message.channel.awaitMessages({
@@ -76,7 +78,7 @@ async function add_event(message) {
             errors: ['time']
         })).first().content;
         if (eventDateInput === "q") {
-            console.log("User aborted.");
+            await message.channel.send("Aborted operation.");
             return;
         }
         try {
@@ -97,7 +99,10 @@ async function add_event(message) {
 }
 
 async function remove_event(message) {
+    //TODO: This is broken
     await list_events(message);
+
+    eventToDelete = "";
 
     // Open JSON.
     const events = JSON.parse(await readFile(EVENTS_FILEPATH, 'utf8'));
