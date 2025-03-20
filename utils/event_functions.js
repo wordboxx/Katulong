@@ -57,7 +57,6 @@ async function list_events(message) {
 }
 
 async function add_event(message) {
-    //TODO: Fix adding event date
     // If the event was not specified in the command, prompt user for event name.
     await message.channel.send("Name this event?:");
     const eventName = (await message.channel.awaitMessages({
@@ -81,12 +80,16 @@ async function add_event(message) {
             await message.channel.send("Aborted operation.");
             return;
         }
-        try {
-            eventDate = new Date(eventDateInput).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-            break;
-        } catch (error) {
-            await message.channel.send("Invalid input; Please enter is `MM-DD-YYYY`.");
+        // Validate the date format
+        const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+        if (dateRegex.test(eventDateInput)) {
+            eventDate = new Date(eventDateInput);
+            if (!isNaN(eventDate)) {
+                eventDate = eventDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                break;
+            }
         }
+        await message.channel.send("Invalid input; Please enter date in `MM-DD-YYYY` format.");
     }
 
     // Add the event and date to JSON.
@@ -99,10 +102,9 @@ async function add_event(message) {
 }
 
 async function remove_event(message) {
-    //TODO: This is broken
     await list_events(message);
 
-    eventToDelete = "";
+    let eventToDelete = ""; // Declare with 'let' to limit scope
 
     // Open JSON.
     const events = JSON.parse(await readFile(EVENTS_FILEPATH, 'utf8'));
@@ -116,7 +118,7 @@ async function remove_event(message) {
     while (true) {
         try {
             await message.channel.send("Which event to delete? Enter the Leftmost number:");
-            const eventToDelete = parseInt((await message.channel.awaitMessages({
+            eventToDelete = parseInt((await message.channel.awaitMessages({
                 filter: m => m.author.id === message.author.id,
                 max: 1,
                 time: 60000,
