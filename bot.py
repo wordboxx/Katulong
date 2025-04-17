@@ -38,7 +38,7 @@ async def ping(ctx):
 
 @bot.command()
 async def help(ctx):
-    await ctx.send(f"Available commands: {', '.join(commands)}")
+    await ctx.send(f"Available commands:\n{'\n'.join(commands)}")
 
 @bot.command()
 async def events(ctx):
