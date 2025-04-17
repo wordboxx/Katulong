@@ -4,7 +4,7 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from utils.event_functions import get_events, add_new_event, format_events, date_checker
+from utils.event_functions import get_events, add_new_event, format_events, date_checker, remove_event
 
 # Print current working directory
 print(f"Current working directory: {os.getcwd()}")
@@ -17,10 +17,14 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 intents = discord.Intents.default()
 intents.message_content = True  # Required for message content
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+# List of all commands
 commands = [
     "ping",
+    "help",
     "events",
-    "add_event"
+    "add_event",
+    "delete_event"
 ]
 
 # Bot events
@@ -60,6 +64,22 @@ async def add_event(ctx):
         
         await add_new_event(ctx, name_msg.content, date_msg.content)
         await ctx.send(f"Event added: {name_msg.content} on {date_msg.content}")
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+# TODO: See if this works later
+@bot.command()
+async def delete_event(ctx):
+    """Delete an event."""
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
+
+    try:
+        await ctx.send(get_events())
+        await ctx.send("Enter the event number to delete:")
+        number_msg = await bot.wait_for('message', check=check, timeout=30.0)
+        await remove_event(ctx, number_msg.content)
+        await ctx.send(f"Event {number_msg.content} deleted.")
     except Exception as e:
         await ctx.send(f"Error: {e}")
 
