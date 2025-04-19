@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 from pathlib import Path
+import discord
+from discord import ui
 
 # Constants
 EVENTS_FILE = Path("data/events.json")
@@ -31,56 +33,53 @@ def save_events(events):
     """Save events to the JSON file."""
     EVENTS_FILE.write_text(json.dumps(events, indent=4))
 
-async def add_new_event(ctx, bot):
-    """Add a new event with user prompts."""
-    def check(m):
-        return m.author == ctx.author and m.channel == ctx.channel
+class EventModal(ui.Modal, title="Add New Event"):
+    name = ui.TextInput(label="Event Name", placeholder="Enter the event name...", required=True)
+    date = ui.TextInput(label="Event Date", placeholder="MM/DD/YYYY", required=True)
 
-    try:
-        await ctx.send("Enter the event name:")
-        name_msg = await bot.wait_for('message', check=check, timeout=30.0)
-        
-        await ctx.send("Enter the event date (MM/DD/YYYY only):")
-        date_msg = await bot.wait_for('message', check=check, timeout=30.0)
-        
-        if not date_checker(date_msg.content):
-            await ctx.send("Invalid date format or date is in the past. Please use MM/DD/YYYY.")
+    async def on_submit(self, interaction: discord.Interaction):
+        if not date_checker(self.date.value):
+            await interaction.response.send_message("Invalid date format or date is in the past. Please use MM/DD/YYYY.", ephemeral=True)
             return
             
         events = get_events()
-        events.append({"name": name_msg.content, "date": date_msg.content})
+        events.append({"name": self.name.value, "date": self.date.value})
         save_events(events)
-        await ctx.send(f"Event added: {name_msg.content} on {date_msg.content}")
-    except Exception as e:
-        await ctx.send(f"Error: {e}")
+        await interaction.response.send_message(f"Event added: {self.name.value} on {self.date.value}")
 
-async def remove_event(ctx, bot):
-    """Delete an event with user prompts."""
-    def check(m):
-        return m.author == ctx.author and m.channel == ctx.channel
+class EventSelectView(ui.View):
+    def __init__(self, events):
+        super().__init__()
+        self.events = events
+        
+        self.select = ui.Select(placeholder="Choose an event to delete")
+        for i, event in enumerate(events):
+            self.select.add_option(label=event['name'], value=str(i), description=f"Date: {event['date']}")
+        self.select.callback = self.select_callback
+        self.add_item(self.select)
+        
+    async def select_callback(self, interaction: discord.Interaction):
+        index = int(self.select.values[0])
+        event_name = self.events[index]['name']
+        self.events.pop(index)
+        save_events(self.events)
+        await interaction.response.send_message(f'Event "{event_name}" deleted.', ephemeral=True)
+        self.stop()
 
+async def add_new_event(interaction: discord.Interaction, bot):
+    """Add a new event using a modal."""
+    modal = EventModal()
+    await interaction.response.send_modal(modal)
+
+async def remove_event(interaction: discord.Interaction, bot):
+    """Delete an event using a select menu."""
     events = get_events()
     if not events:
-        await ctx.send("No events to delete.")
+        await interaction.response.send_message("No events to delete.", ephemeral=True)
         return
 
-    await ctx.send(f"Enter the event number to delete:\n{format_events(events)}")
-    num_msg = await bot.wait_for('message', check=check, timeout=30.0)
-    
-    if not num_msg.content.isdigit():
-        await ctx.send("Invalid input. Please enter a valid number.")
-        return
-    
-    number = int(num_msg.content)
-    length = len(events)
-    if number > length or number < 1:
-        await ctx.send("Invalid event number.")
-        return
-        
-    event_name = events[number - 1]['name']
-    events.pop(number - 1)
-    save_events(events)
-    await ctx.send(f'Event "{event_name}" deleted.')
+    view = EventSelectView(events)
+    await interaction.response.send_message("Select an event to delete:", view=view, ephemeral=True)
 
 def format_events(events):
     """Format events for display."""
